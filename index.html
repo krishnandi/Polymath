@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Polymath">
+<meta name="theme-color" content="#0a0a08">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Polymath</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a08;--surface:#111110;--surface2:#1a1a17;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#e8e6df;--muted:#888780;--gold:#c9b88a;
+  --green:#8a9e7a;--blue:#7a8a9e;--rose:#9e7a8a;--teal:#7a9e8a;
+  --serif:'Playfair Display',Georgia,serif;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);position:fixed;inset:0;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.4}
+
+.app-shell{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-top)}
+.app-header{padding:14px 18px 10px;border-bottom:0.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.logo-area h1{font-family:var(--serif);font-size:24px;font-weight:400;letter-spacing:-0.02em;line-height:1}
+.logo-area h1 em{font-style:italic;color:var(--gold)}
+.logo-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:3px}
+.header-right{display:flex;gap:14px;align-items:center}
+.hstat{text-align:right}
+.hstat-val{font-family:var(--serif);font-size:20px;color:var(--gold);line-height:1}
+.hstat-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px}
+.sync-btn{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.2s;flex-shrink:0}
+.sync-btn.syncing{animation:spin 1s linear infinite}
+.sync-btn.ok{border-color:rgba(138,158,122,0.4);color:var(--green)}
+.sync-btn.err{border-color:rgba(158,100,100,0.4);color:#9e7a7a}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(80px + var(--safe-bottom))}
+.scroll-content{padding:0 16px 20px;max-width:600px;margin:0 auto}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;padding-bottom:var(--safe-bottom);background:rgba(10,10,8,0.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:0.5px solid var(--border);z-index:100;display:flex}
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 12px;cursor:pointer;font-family:var(--mono);font-size:8px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);transition:color 0.2s;background:none;border:none;gap:4px}
+.nav-icon{font-size:16px;line-height:1}
+.nav-tab.active{color:var(--gold)}
+
+.view{display:none}
+.view.active{display:block}
+.section-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin:18px 0 10px;opacity:0.8}
+
+/* SETUP BANNER */
+.setup-banner{background:rgba(201,184,138,0.06);border:0.5px solid rgba(201,184,138,0.25);border-radius:12px;padding:14px 16px;margin-top:14px;margin-bottom:4px}
+.setup-title{font-family:var(--serif);font-size:14px;color:var(--gold);margin-bottom:6px}
+.setup-body{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.setup-input{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;margin-bottom:8px}
+.setup-input::placeholder{color:var(--muted)}
+.setup-input:focus{border-color:rgba(201,184,138,0.4)}
+.setup-row{display:flex;gap:8px}
+.btn{padding:9px 14px;border-radius:8px;font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s}
+.btn-gold{background:rgba(201,184,138,0.15);color:var(--gold);border:0.5px solid rgba(201,184,138,0.3)}
+.btn-muted{background:var(--surface2);color:var(--muted);border:0.5px solid var(--border2)}
+.btn:active{opacity:0.7}
+.setup-status{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:6px;min-height:14px}
+
+/* TODAY */
+.day-banner{background:linear-gradient(135deg,rgba(201,184,138,0.07) 0%,rgba(201,184,138,0.02) 100%);border:0.5px solid rgba(201,184,138,0.18);border-radius:12px;padding:14px 16px;margin-top:14px;margin-bottom:4px}
+.day-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.day-name{font-family:var(--serif);font-size:20px;font-style:italic;color:var(--gold)}
+.day-date{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.06em;text-align:right;margin-top:2px}
+.day-focus-label{font-family:var(--mono);font-size:8px;color:var(--gold);opacity:0.6;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px}
+.day-focus-text{font-family:var(--serif);font-size:14px;color:var(--text);font-style:italic;line-height:1.4}
+
+.streak-row{display:flex;align-items:center;gap:4px;margin:12px 0}
+.streak-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-right:4px;flex-shrink:0}
+.streak-dot{border-radius:5px;background:var(--surface);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:var(--muted);flex:1;height:28px;transition:all 0.2s}
+.streak-dot.done{background:rgba(138,158,122,0.12);border-color:rgba(138,158,122,0.3);color:var(--green)}
+.streak-dot.today{border-color:var(--gold);color:var(--gold)}
+
+.task-list{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+.task-card{background:var(--surface);border:0.5px solid var(--border);border-radius:11px;padding:13px 14px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;-webkit-user-select:none;user-select:none}
+.task-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:2px;opacity:0;transition:opacity 0.3s}
+.task-card.done::before{opacity:1}
+.task-card[data-color="gold"]::before{background:var(--gold)}
+.task-card[data-color="green"]::before{background:var(--green)}
+.task-card[data-color="blue"]::before{background:var(--blue)}
+.task-card[data-color="rose"]::before{background:var(--rose)}
+.task-card[data-color="teal"]::before{background:var(--teal)}
+.task-card.done{background:rgba(138,158,122,0.04);border-color:rgba(138,158,122,0.18)}
+.task-card.done .task-title{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(138,158,122,0.3)}
+.task-time{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px}
+.task-title{font-family:var(--serif);font-size:15px;color:var(--text);margin-bottom:3px;line-height:1.3;transition:color 0.2s;padding-right:24px}
+.task-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.task-mark{position:absolute;top:13px;right:13px;width:18px;height:18px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all 0.2s;color:transparent}
+.task-card.done .task-mark{background:rgba(138,158,122,0.2);border-color:var(--green);color:var(--green)}
+
+.progress-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.prog-bar-wrap{flex:1;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.prog-bar-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 0.5s ease}
+.prog-text{font-family:var(--mono);font-size:9px;color:var(--muted);white-space:nowrap}
+
+.action-row{display:flex;gap:8px;margin-top:10px}
+.action-btn{flex:1;padding:11px 10px;background:var(--surface);border:0.5px solid var(--border);border-radius:10px;color:var(--muted);font-family:var(--mono);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;text-align:center}
+.action-btn.primary{background:rgba(201,184,138,0.07);border-color:rgba(201,184,138,0.2);color:var(--gold)}
+.action-btn:active{opacity:0.7}
+
+/* DECADE */
+.dphase{border:0.5px solid var(--border);border-radius:12px;margin-bottom:9px;overflow:hidden;cursor:pointer;transition:border-color 0.2s}
+.dphase.open{border-color:rgba(201,184,138,0.22)}
+.dphase-header{display:flex;align-items:center;gap:10px;padding:13px 15px}
+.dphase-age{font-family:var(--mono);font-size:9px;letter-spacing:0.06em;min-width:64px}
+.dphase-title{font-family:var(--serif);font-size:14px;font-weight:400;color:var(--text);flex:1;line-height:1.2}
+.dphase-tag{font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:3px;letter-spacing:0.04em;flex-shrink:0}
+.dphase-arrow{font-size:13px;color:var(--muted);transition:transform 0.2s;flex-shrink:0}
+.dphase.open .dphase-arrow{transform:rotate(90deg)}
+.dphase-body{display:none;padding:0 15px 15px;border-top:0.5px solid var(--border)}
+.dphase.open .dphase-body{display:block}
+.dphase-desc{font-size:11px;color:var(--muted);line-height:1.7;margin:11px 0}
+.dphase-tracks{display:flex;flex-direction:column;gap:7px;margin-bottom:11px}
+.dtrack{background:var(--surface2);border-radius:7px;padding:9px 11px;border:0.5px solid var(--border)}
+.dtrack-label{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:5px}
+.dtrack-item{font-size:11px;color:var(--text);line-height:1.5;padding:1px 0}
+.dphase-milestones{display:flex;flex-wrap:wrap;gap:5px}
+.dmilestone{font-family:var(--mono);font-size:8px;padding:3px 7px;border-radius:3px;background:rgba(201,184,138,0.07);color:var(--gold);border:0.5px solid rgba(201,184,138,0.14);letter-spacing:0.04em}
+.dphase[data-phase="uni"] .dphase-age,.dphase[data-phase="uni"] .dphase-arrow{color:var(--green)}
+.dphase[data-phase="uni"] .dphase-tag{background:rgba(138,158,122,0.1);color:var(--green);border:0.5px solid rgba(138,158,122,0.2)}
+.dphase[data-phase="uni"].open{border-color:rgba(138,158,122,0.28)}
+.dphase[data-phase="stanford"] .dphase-age,.dphase[data-phase="stanford"] .dphase-arrow{color:var(--blue)}
+.dphase[data-phase="stanford"] .dphase-tag{background:rgba(122,138,158,0.1);color:var(--blue);border:0.5px solid rgba(122,138,158,0.2)}
+.dphase[data-phase="stanford"].open{border-color:rgba(122,138,158,0.28)}
+.dphase[data-phase="build"] .dphase-age,.dphase[data-phase="build"] .dphase-arrow{color:var(--gold)}
+.dphase[data-phase="build"] .dphase-tag{background:rgba(201,184,138,0.1);color:var(--gold);border:0.5px solid rgba(201,184,138,0.2)}
+.dphase[data-phase="build"].open{border-color:rgba(201,184,138,0.28)}
+.dphase[data-phase="rise"] .dphase-age,.dphase[data-phase="rise"] .dphase-arrow{color:var(--rose)}
+.dphase[data-phase="rise"] .dphase-tag{background:rgba(158,122,138,0.1);color:var(--rose);border:0.5px solid rgba(158,122,138,0.2)}
+.dphase[data-phase="rise"].open{border-color:rgba(158,122,138,0.28)}
+
+/* CLUSTERS */
+.cluster-card{background:var(--surface);border:0.5px solid var(--border);border-radius:11px;padding:14px;margin-bottom:9px;cursor:pointer;transition:border-color 0.2s,background 0.2s;position:relative;overflow:hidden;opacity:0;animation:fadeUp 0.4s ease forwards}
+.cluster-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.7}
+.cluster-card[data-cluster="cognitive"]::before{background:var(--gold)}
+.cluster-card[data-cluster="builder"]::before{background:var(--green)}
+.cluster-card[data-cluster="money"]::before{background:var(--blue)}
+.cluster-card[data-cluster="communicator"]::before{background:#9e8a7a}
+.cluster-card[data-cluster="creative"]::before{background:var(--rose)}
+.cluster-card[data-cluster="life"]::before{background:var(--teal)}
+.cluster-card:active{background:var(--surface2)}
+.cluster-card.selected{border-color:rgba(201,184,138,0.28);background:var(--surface2)}
+.cluster-card:nth-child(1){animation-delay:0.04s}.cluster-card:nth-child(2){animation-delay:0.08s}.cluster-card:nth-child(3){animation-delay:0.12s}.cluster-card:nth-child(4){animation-delay:0.16s}.cluster-card:nth-child(5){animation-delay:0.20s}.cluster-card:nth-child(6){animation-delay:0.24s}
+.cluster-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
+.cluster-name{font-family:var(--serif);font-size:15px;font-weight:400;color:var(--text);line-height:1.2;flex:1;margin-right:8px}
+.cluster-age{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.06em;text-align:right;flex-shrink:0}
+.cluster-desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5}
+.cluster-pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.cpill{font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;letter-spacing:0.04em}
+.cluster-card[data-cluster="cognitive"] .cpill{background:rgba(201,184,138,0.1);color:var(--gold);border:0.5px solid rgba(201,184,138,0.2)}
+.cluster-card[data-cluster="builder"] .cpill{background:rgba(138,158,122,0.1);color:var(--green);border:0.5px solid rgba(138,158,122,0.2)}
+.cluster-card[data-cluster="money"] .cpill{background:rgba(122,138,158,0.1);color:var(--blue);border:0.5px solid rgba(122,138,158,0.2)}
+.cluster-card[data-cluster="communicator"] .cpill{background:rgba(158,138,122,0.1);color:#9e8a7a;border:0.5px solid rgba(158,138,122,0.2)}
+.cluster-card[data-cluster="creative"] .cpill{background:rgba(158,122,138,0.1);color:var(--rose);border:0.5px solid rgba(158,122,138,0.2)}
+.cluster-card[data-cluster="life"] .cpill{background:rgba(122,158,138,0.1);color:var(--teal);border:0.5px solid rgba(122,158,138,0.2)}
+.cluster-progress{height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.cluster-progress-fill{height:100%;border-radius:2px;transition:width 0.6s ease}
+.cluster-card[data-cluster="cognitive"] .cluster-progress-fill{background:var(--gold)}
+.cluster-card[data-cluster="builder"] .cluster-progress-fill{background:var(--green)}
+.cluster-card[data-cluster="money"] .cluster-progress-fill{background:var(--blue)}
+.cluster-card[data-cluster="communicator"] .cluster-progress-fill{background:#9e8a7a}
+.cluster-card[data-cluster="creative"] .cluster-progress-fill{background:var(--rose)}
+.cluster-card[data-cluster="life"] .cluster-progress-fill{background:var(--teal)}
+.cluster-footer{display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+.cluster-pct{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.06em}
+.interest-panel{background:var(--surface);border:0.5px solid rgba(201,184,138,0.18);border-radius:12px;padding:14px;margin-bottom:14px;display:none}
+.interest-panel.visible{display:block}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.panel-title{font-family:var(--serif);font-size:17px;font-weight:400;font-style:italic}
+.panel-close{font-family:var(--mono);font-size:9px;cursor:pointer;letter-spacing:0.08em;background:none;border:none;color:var(--muted);padding:4px 8px}
+.interest-item{background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;padding:11px 12px;cursor:pointer;transition:all 0.2s;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.interest-item.done{border-color:rgba(138,158,122,0.28);background:rgba(138,158,122,0.04)}
+.interest-left{display:flex;align-items:center;gap:8px}
+.check-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background 0.2s}
+.interest-item.done .check-dot{background:var(--green)}
+.interest-name{font-size:12px;color:var(--text)}
+.interest-status{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.interest-item.done .interest-status{color:var(--green)}
+
+/* LAWS */
+.law-item{display:flex;gap:14px;padding:16px 0;border-bottom:0.5px solid var(--border);align-items:flex-start;opacity:0;animation:fadeSlide 0.4s ease forwards}
+.law-num{font-family:var(--serif);font-size:22px;font-weight:400;font-style:italic;color:var(--gold);opacity:0.35;min-width:26px;line-height:1;margin-top:2px}
+.law-title{font-family:var(--serif);font-size:14px;font-weight:400;color:var(--text);margin-bottom:5px}
+.law-body{font-size:11px;color:var(--muted);line-height:1.7}
+.law-item:nth-child(1){animation-delay:0.04s}.law-item:nth-child(2){animation-delay:0.08s}.law-item:nth-child(3){animation-delay:0.12s}.law-item:nth-child(4){animation-delay:0.16s}.law-item:nth-child(5){animation-delay:0.20s}.law-item:nth-child(6){animation-delay:0.24s}.law-item:nth-child(7){animation-delay:0.28s}.law-item:nth-child(8){animation-delay:0.32s}.law-item:nth-child(9){animation-delay:0.36s}.law-item:nth-child(10){animation-delay:0.40s}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(80px + var(--safe-bottom) + 10px);left:50%;transform:translateX(-50%) translateY(16px);background:var(--surface2);border:0.5px solid rgba(201,184,138,0.28);border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:0.08em;opacity:0;transition:all 0.25s;pointer-events:none;white-space:nowrap;z-index:200}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* SETTINGS (inside Laws view, at bottom) */
+.settings-section{margin-top:28px;padding-top:20px;border-top:0.5px solid var(--border)}
+.settings-title{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px}
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.settings-label{font-size:12px;color:var(--text)}
+.settings-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+.toggle{width:40px;height:24px;border-radius:12px;background:var(--surface2);border:0.5px solid var(--border2);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0}
+.toggle.on{background:rgba(201,184,138,0.25);border-color:rgba(201,184,138,0.4)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:all 0.2s}
+.toggle.on::after{left:19px;background:var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="app-header">
+    <div class="logo-area">
+      <h1>Poly<em>math</em></h1>
+      <div class="logo-sub">Krish — age 20 to 30</div>
+    </div>
+    <div class="header-right">
+      <div class="hstat"><div class="hstat-val" id="total-done">0</div><div class="hstat-label">Active</div></div>
+      <div class="hstat"><div class="hstat-val" id="streak-count">0</div><div class="hstat-label">Today</div></div>
+      <div class="sync-btn" id="sync-btn" onclick="manualSync()" title="Sync to Google Sheets">⟳</div>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <div class="scroll-content">
+
+      <!-- TODAY -->
+      <div class="view active" id="view-today">
+        <div class="day-banner">
+          <div class="day-meta">
+            <div>
+              <div class="day-focus-label">Today</div>
+              <div class="day-name" id="today-day-name"></div>
+            </div>
+            <div class="day-date" id="today-date"></div>
+          </div>
+          <div class="day-focus-label" style="margin-top:8px">Full focus</div>
+          <div class="day-focus-text" id="today-focus"></div>
+        </div>
+
+        <div class="streak-row">
+          <span class="streak-label">Week</span>
+          <div id="streak-dots" style="display:flex;gap:4px;flex:1"></div>
+        </div>
+
+        <div class="section-label">Today's work</div>
+        <div class="task-list" id="task-list"></div>
+
+        <div class="progress-row">
+          <span class="prog-text" id="prog-label">0 / 0</span>
+          <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-bar" style="width:0%"></div></div>
+          <span class="prog-text" id="prog-pct">0%</span>
+        </div>
+
+        <div class="action-row">
+          <button class="action-btn primary" onclick="syncToSheets()">⬆ Sync to Sheets</button>
+          <button class="action-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+
+      <!-- DECADE -->
+      <div class="view" id="view-decade">
+        <div class="section-label" style="margin-top:16px">Your 10-year conquest</div>
+        <div id="decade-phases"></div>
+      </div>
+
+      <!-- CLUSTERS -->
+      <div class="view" id="view-clusters">
+        <div class="section-label" style="margin-top:16px">Knowledge clusters</div>
+        <div id="clusters-grid"></div>
+        <div class="interest-panel" id="interest-panel">
+          <div class="panel-header">
+            <div class="panel-title" id="panel-title"></div>
+            <button class="panel-close" onclick="closePanel()">close ×</button>
+          </div>
+          <div id="interests-list"></div>
+        </div>
+      </div>
+
+      <!-- LAWS + SETTINGS -->
+      <div class="view" id="view-laws">
+        <div class="section-label" style="margin-top:16px">Laws of the polymath</div>
+        <div class="laws-list" id="laws-list"></div>
+
+        <div class="settings-section">
+          <div class="settings-title">App Settings</div>
+
+          <!-- Google Sheets Setup -->
+          <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+            <div style="font-family:var(--serif);font-size:14px;color:var(--gold);margin-bottom:6px">Google Sheets Sync</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+              Paste your Google Sheets Web App URL below. Every task you complete syncs in real time to your spreadsheet. <span style="color:var(--gold)">See setup guide below.</span>
+            </div>
+            <input class="setup-input" id="sheets-url-input" type="url" placeholder="https://script.google.com/macros/s/YOUR_ID/exec" value="">
+            <div class="setup-row">
+              <button class="btn btn-gold" onclick="saveSheetURL()">Save URL</button>
+              <button class="btn btn-muted" onclick="testSheetConnection()">Test connection</button>
+            </div>
+            <div class="setup-status" id="sheets-status"></div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Morning reminder</div>
+              <div class="settings-sub">Daily 07:00 — "Do the work."</div>
+            </div>
+            <div class="toggle" id="toggle-morning" onclick="toggleNotif('morning',this)"></div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Evening anchor</div>
+              <div class="settings-sub">Daily 21:00 — "Language + book."</div>
+            </div>
+            <div class="toggle" id="toggle-evening" onclick="toggleNotif('evening',this)"></div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Midnight check</div>
+              <div class="settings-sub">23:30 — any tasks unfinished</div>
+            </div>
+            <div class="toggle" id="toggle-midnight" onclick="toggleNotif('midnight',this)"></div>
+          </div>
+
+          <!-- Setup guide -->
+          <div style="margin-top:20px;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">Google Sheets Setup (one time, 5 min)</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.9">
+              <b style="color:var(--text)">1.</b> Open <span style="color:var(--gold)">sheets.google.com</span> → create a new sheet called "Polymath"<br>
+              <b style="color:var(--text)">2.</b> Go to <b style="color:var(--text)">Extensions → Apps Script</b><br>
+              <b style="color:var(--text)">3.</b> Delete the default code. Paste the script from the <b style="color:var(--text)">polymath_sheets_script.gs</b> file (included in your download)<br>
+              <b style="color:var(--text)">4.</b> Click <b style="color:var(--text)">Deploy → New deployment → Web app</b><br>
+              <b style="color:var(--text)">5.</b> Set "Who has access" to <b style="color:var(--text)">Anyone</b> → click Deploy<br>
+              <b style="color:var(--text)">6.</b> Copy the Web App URL → paste it above → Save<br>
+              <b style="color:var(--text)">7.</b> Done. Every task you tick now writes to your sheet instantly.
+            </div>
+          </div>
+
+          <div style="margin-top:14px;font-family:var(--mono);font-size:9px;color:var(--muted);text-align:center;letter-spacing:0.06em;padding-bottom:8px">
+            "You are not entitled to the fruit, only the action."
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active" onclick="switchView('today',this)"><span class="nav-icon">◎</span>Today</button>
+    <button class="nav-tab" onclick="switchView('decade',this)"><span class="nav-icon">◈</span>Decade</button>
+    <button class="nav-tab" onclick="switchView('clusters',this)"><span class="nav-icon">◇</span>Clusters</button>
+    <button class="nav-tab" onclick="switchView('laws',this)"><span class="nav-icon">§</span>Laws</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════
+const dayFocus = {
+  0:{name:'Sunday',  focus:'Rest & review — read, write, reflect. Plan the week ahead.'},
+  1:{name:'Monday',  focus:'Deep CS / mathematics — no interruptions. Build something real.'},
+  2:{name:'Tuesday', focus:'Language sprint — Spanish intensive + second language exposure.'},
+  3:{name:'Wednesday',focus:'Project work — ship something, hackathon prep, or a Medium draft.'},
+  4:{name:'Thursday',focus:'Finance & global context — read markets, geopolitics, history.'},
+  5:{name:'Friday',  focus:'Creative output — music, photography, or 500 words written.'},
+  6:{name:'Saturday',focus:'Body + culture — train hard, cook a new cuisine, watch a documentary.'}
+};
+
+const dayTasks = {
+  0:[
+    {time:'09:00 — Weekly review',title:'One page review',desc:'What did you do? What moved? What did not? Be honest. 15 minutes.',color:'gold'},
+    {time:'10:00 — Reading',title:'2 articles + 20 pages',desc:'Write one sentence summary after each. Anything from your cluster queue.',color:'blue'},
+    {time:'14:00 — Language',title:'Spanish + one new language',desc:'30 min Dreaming Spanish. 15 min intro to the next language on the list.',color:'teal'},
+    {time:'17:00 — Plan',title:'Write Monday\'s one priority',desc:'One sentence. Tape it to your desk. Everything else is secondary.',color:'rose'},
+    {time:'20:00 — Wind down',title:'Cook something new. No screens by 22:00.',desc:'Bourdain rule: the full life runs alongside the ambitious one.',color:'green'}
+  ],
+  1:[
+    {time:'07:00 — Morning anchor',title:'Wake. No phone. Move.',desc:'Identity statement aloud. 20 push-ups or a walk. Charger stays in the hall.',color:'gold'},
+    {time:'09:00 — Deep work I',title:'CS / mathematics. Full focus.',desc:'Java OOP, algorithms, or current coursework. 90 minutes. No tabs. Phone face down.',color:'gold'},
+    {time:'11:00 — Deep work II',title:'Continue or pivot to project.',desc:'If you shipped nothing last week, today fixes that. 60 minutes on the real thing.',color:'blue'},
+    {time:'13:00 — Body',title:'Gym or 20-minute walk. Protein.',desc:'Non-negotiable. The brain does not work if the body sits still all day.',color:'green'},
+    {time:'15:00 — Uni work',title:'Coursework. Lighter than morning.',desc:'Finish what is due. Email replies. Admin. 60 minutes maximum.',color:'rose'},
+    {time:'21:00 — Evening anchor',title:'Spanish 30 min. 10 pages. Phone in hall.',desc:'Language Transfer or Dreaming Spanish. Then your book. Write tomorrow\'s priority.',color:'teal'}
+  ],
+  2:[
+    {time:'07:00 — Morning anchor',title:'Wake. Move. Identity.',desc:'Same ritual. The ritual is the anchor. Do not negotiate with it.',color:'gold'},
+    {time:'09:00 — Language deep dive',title:'Spanish — 90 minutes.',desc:'Grammar focus or long-form Dreaming Spanish episode. No switching.',color:'teal'},
+    {time:'11:00 — Second language',title:'Choose one: French, Arabic, Mandarin, Portuguese.',desc:'20 minutes. Language Transfer is the real thing. Pick it.',color:'teal'},
+    {time:'13:00 — Body + lunch',title:'Train. Eat real food.',desc:'Gym session or long walk. No desk lunch.',color:'green'},
+    {time:'15:00 — CS / project',title:'Code something. Anything.',desc:'Even 45 minutes on a real project beats nothing. Commit to GitHub.',color:'gold'},
+    {time:'20:00 — LinkedIn + evening',title:'Post, connect, read.',desc:'One post, two genuine comments on other people\'s work. 10 pages. Lights out by 23:00.',color:'blue'}
+  ],
+  3:[
+    {time:'07:00 — Morning anchor',title:'Wake. No phone. Move.',desc:'Ritual. No deviation.',color:'gold'},
+    {time:'09:00 — Project / hackathon',title:'Ship or prepare to ship.',desc:'Something real. A working prototype, a design, a deployed thing. 90 minutes.',color:'gold'},
+    {time:'11:00 — Writing',title:'Medium draft or journal entry.',desc:'500 words minimum. You do not have to publish it. You have to write it.',color:'rose'},
+    {time:'13:00 — Body',title:'Gym. Protein.',desc:'Wednesday is push day. Non-negotiable.',color:'green'},
+    {time:'15:00 — Competitions',title:'Research one competition or hackathon.',desc:'Enter it or bookmark it with a deadline. Hackathons are not optional.',color:'blue'},
+    {time:'21:00 — Evening anchor',title:'Spanish + book. Phone in hall.',desc:'Same as always. The compound interest is silent until it is not.',color:'teal'}
+  ],
+  4:[
+    {time:'07:00 — Morning anchor',title:'Wake. Move. Identity.',desc:'The ritual does not know what day it is. Neither should your resistance.',color:'gold'},
+    {time:'09:00 — Finance / geopolitics',title:'Read markets. Read the world.',desc:'One financial news piece, one geopolitics piece. Take notes in one sentence each.',color:'blue'},
+    {time:'10:30 — CS or maths',title:'60 minutes. One problem set or chapter.',desc:'Lighter than Monday. Still real work.',color:'gold'},
+    {time:'13:00 — Body',title:'Train.',desc:'Pull day or walk. Eat well.',color:'green'},
+    {time:'15:00 — Uni + LinkedIn',title:'Coursework. Then LinkedIn.',desc:'20 minutes on LinkedIn — post something, connect with someone you respect.',color:'blue'},
+    {time:'21:00 — Language + book',title:'Spanish. 10 pages. Early bed.',desc:'Thursday sets up Friday. Be rested.',color:'teal'}
+  ],
+  5:[
+    {time:'07:00 — Morning anchor',title:'Wake. Move. Identity.',desc:'Last deep-work day of the week. Make it count.',color:'gold'},
+    {time:'09:00 — Creative work',title:'Music, photography, or writing.',desc:'One finished thing. A song sketch, a photo edit, a published piece. Finish it.',color:'rose'},
+    {time:'11:00 — Project or reading',title:'Advance one long-term project.',desc:'Even 45 minutes. The project needs weekly attention.',color:'blue'},
+    {time:'13:00 — Body',title:'Train. Then do nothing for 30 minutes.',desc:'Eat lunch without a screen. Bourdain rule.',color:'green'},
+    {time:'15:00 — Social / LinkedIn',title:'Reach out to someone you admire.',desc:'Cold DM, LinkedIn message, email. One per week minimum. The network is everything.',color:'teal'},
+    {time:'20:00 — Week close',title:'Log the week. Plan the weekend.',desc:'Open the tracker. Mark what you did. Be honest. Close the laptop.',color:'gold'}
+  ],
+  6:[
+    {time:'09:00 — Body first',title:'Long run or heavy session.',desc:'Saturday is for physical effort. The body leads today.',color:'green'},
+    {time:'11:00 — Cook something new',title:'One new cuisine. No shortcuts.',desc:'Bourdain rule. Pick a country from your travel list. Cook something from it.',color:'teal'},
+    {time:'14:00 — Culture',title:'Museum, film, documentary, or live music.',desc:'The creative soul needs feeding. Schedule this like a meeting.',color:'rose'},
+    {time:'17:00 — Language immersion',title:'Watch something in Spanish, French, or Arabic.',desc:'No subtitles if you can manage it. This is immersion, not study.',color:'teal'},
+    {time:'20:00 — Write',title:'Travel journal, food note, or observation.',desc:'Bourdain always wrote it down. Even one paragraph counts.',color:'gold'}
+  ]
+};
+
+const decades = [
+  {phase:'uni',age:'20 — 23',title:'The foundation years',tag:'University',
+   desc:'Second and third year at UCA Farnham. Every hackathon, competition, and project you enter now is Stanford application material. Graduate with a portfolio that speaks for itself. Intern twice. Apply for a fellowship.',
+   tracks:[
+     {label:'Academic',items:['Year 2 & 3 CS coursework','Java OOP mastery','Python + full-stack projects','Mathematics depth']},
+     {label:'Competitive',items:['5+ hackathons entered','Design competitions','Adobe creative contests','Coding challenges']},
+     {label:'Career',items:['2 internships minimum','1 fellowship application','Real client projects','First Medium article live']}
+   ],
+   milestones:['First hackathon placed','Internship secured','Spanish conversational','First solo trip','Stanford prep begins']},
+  {phase:'stanford',age:'23 — 24.5',title:'Stanford Masters',tag:'Graduate school',
+   desc:'MSc at Stanford — CS, HCI, or MS&E. Not just a degree. Access to the best minds on the planet, Silicon Valley proximity, and the network that opens every door. Your startup idea crystallises here.',
+   tracks:[
+     {label:'Academic',items:['Deep CS specialisation','AI & ML coursework','Research opportunities','Cross-disciplinary units']},
+     {label:'Network',items:['Silicon Valley exposure','YC and a16z proximity','Stanford founders network','Professor relationships']},
+     {label:'Building',items:['Startup MVP in progress','First co-founder found','Early users or clients','Grant or fellowship funding']}
+   ],
+   milestones:['Stanford offer accepted','First startup users','Co-founder found','French conversational','10 countries visited']},
+  {phase:'build',age:'24.5 — 26',title:'Build or work — no half measures',tag:'Launchpad',
+   desc:'Stanford done. Deep into a world-class company, or all in on your startup. There is no comfortable middle. The compound interest of the last five years starts paying out here.',
+   tracks:[
+     {label:'If startup',items:['Full-time on the company','Fundraising rounds','Hiring first team','Product-market fit hunt']},
+     {label:'If employed',items:['Top-tier company only','Ship real products','Build internal reputation','Side project always running']},
+     {label:'Life',items:['4+ countries per year','Cook local cuisines','3rd language conversational','Stay physically elite']}
+   ],
+   milestones:['First £100k revenue or salary','Third language spoken','South East Asia trip','Japan trip','Forbes 30u30 prep begins']},
+  {phase:'rise',age:'26 — 30',title:'The rise — Forbes 30 under 30',tag:'Ascent',
+   desc:'This is the window. 26 to 29 is when everything you built becomes visible. The startup grows into something real. The writing, the 9 languages, the 36+ countries, the cooking — the Bourdain chapter runs in parallel with the Musk chapter.',
+   tracks:[
+     {label:'Company',items:['Scaling the startup','Team of 10+ people','Meaningful revenue','Industry recognition']},
+     {label:'World',items:['36+ countries visited','9 languages spoken','Cooking 15+ cuisines','Writing about all of it']},
+     {label:'Recognition',items:['Forbes 30 under 30','Conference speaking','Published work','Mentoring the next cohort']}
+   ],
+   milestones:['Forbes 30 under 30 by 29','Startup at meaningful scale','36 countries visited','9 languages spoken','Something you built changes lives']}
+];
+
+const clusters = [
+  {id:'cognitive',name:'The cognitive engine',desc:'Everything that upgrades how your brain works',age:'20–22 primary',
+   interests:['Memory systems','Speed reading','Neuroscience basics','Psychology & persuasion','Body language','Meditation','Sleep science'],
+   progress:18,progressNote:'You read regularly and have started memory work. Sleep and meditation are inconsistent. Real initiation is when they are daily.'},
+  {id:'builder',name:"The builder's stack",desc:'Everything that lets you create things that scale',age:'20–24 primary',
+   interests:['Java OOP','Python & data','Web full-stack','Mathematics','Physics intuition','Real scalable projects','Startup mechanics'],
+   progress:38,progressNote:'CS coursework active, GitHub has real commits, one shipped project. 38% = genuine foundations, not mastery.'},
+  {id:'money',name:'The money mind',desc:'Everything that builds financial intelligence',age:'23–26 primary',
+   interests:['Personal finance & investing','Global markets','Macroeconomics','Business history','Geopolitics','Accounting basics'],
+   progress:8,progressNote:'You have awareness but not practice. 8% = reading without investing real money yet. Law VI applies directly.'},
+  {id:'communicator',name:'The communicator',desc:'Everything that lets you move people with ideas',age:'21–∞',
+   interests:['Spanish','French','Mandarin','Arabic','Portuguese','Italian','Japanese','German','Swahili','Writing & Medium','Public speaking'],
+   progress:22,progressNote:'Spanish actively studied. 22% = one language in progress, writing occasionally. 9 languages fluent = 100%.'},
+  {id:'creative',name:'The creative soul',desc:'Everything that keeps you human while you build',age:'Always',
+   interests:['Music production','Guitar / piano','Fine art','Photography','Film & cinematography','Drawing'],
+   progress:55,progressNote:'Music and photography are genuinely active. 55% is the highest cluster by instinct — which is correct.'},
+  {id:'life',name:'The Bourdain layer',desc:'Living fully while building ambitiously',age:'Always',
+   interests:['Travel (36+ countries target)','Cooking world cuisines','Cultural immersion','Street food & local restaurants','Writing about life','Experiencing different social strata'],
+   progress:12,progressNote:'A few countries visited, some cooking. 12% = early Bourdain. The gap to 80% is just trips taken and food cooked.'}
+];
+
+const laws = [
+  {num:'I',title:'Never miss two days in a row',body:'One miss is human. Two is a pattern. Three is a decision. If you miss a day, the only rule is: do not miss the next one. No dramatic resets, no self-flagellation. Just continue.'},
+  {num:'II',title:'Consistency over intensity',body:'70% effort every single day beats 100% effort three days then nothing. The person who trains at 70% for 500 days is unrecognisable from the person who trained maximally for 30 days and burned out.'},
+  {num:'III',title:'The feeling will not always be there',body:'The Limitless feeling fades. It always does. When it fades, do the work anyway. That is the entire point. Anyone can work when they feel like it. The discipline is working when you do not.'},
+  {num:'IV',title:'Hackathons and competitions are not optional',body:'Every competition you enter in the next three years is Stanford application material, network, and proof of concept. You do not need to win. You need to ship something real under pressure. Enter everything.'},
+  {num:'V',title:'The Bourdain rule',body:'The full life and the ambitious life are not in competition. Bourdain worked like a machine and ate at the best street stalls in Hanoi. Travel is not a reward for finishing. It is part of the education. Cook, eat, speak to locals, write about it.'},
+  {num:'VI',title:'Every interest needs a project',body:'You do not truly learn finance by reading about it. You learn it by investing real money, even £10. Knowledge without application decays. Always ask: what am I building with this?'},
+  {num:'VII',title:'You are not making up for lost time',body:'You are starting from today. The Gita already told you — you are not entitled to the fruit, only the action. The shame about the last six years cannot be your fuel. Identity is your fuel.'},
+  {num:'VIII',title:'LinkedIn is not optional — it is your public record',body:'Post at least twice a week. Not content for content\'s sake — document the real thing you are building. Connect with every founder, engineer, and interesting person you meet. Your LinkedIn in 2027 should make a 20-year-old feel what you feel looking at someone else\'s now.'},
+  {num:'IX',title:'The network compounds faster than any skill',body:'A DM costs nothing. A coffee costs nothing. Showing genuine interest costs nothing. The people you reach out to this year will open doors in three years you cannot even see yet. Do not wait until you are impressive. Reach out now.'},
+  {num:'X',title:'Nine languages is not a party trick — it is a superpower',body:'Each language you speak is a civilization you can enter. Spanish unlocks 500 million people. Mandarin unlocks the next century. Arabic unlocks a world most people are too lazy to reach. French, Portuguese, Japanese, German, Italian, Swahili — add them one by one. By 30, you will move through the world differently than anyone you know.'}
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let state = JSON.parse(localStorage.getItem('polymath_state') || '{}');
+if (!state.done) state.done = {};
+if (!state.tasksDone) state.tasksDone = {};
+if (!state.weekStreak) state.weekStreak = {};
+if (!state.notifs) state.notifs = {morning:false, evening:false, midnight:false};
+let sheetsURL = localStorage.getItem('polymath_sheets_url') || '';
+
+function saveState() { localStorage.setItem('polymath_state', JSON.stringify(state)); }
+
+// ═══════════════════════════════════════════════════════════════════
+// TODAY
+// ═══════════════════════════════════════════════════════════════════
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function renderToday() {
+  const now = new Date();
+  const dow = now.getDay();
+  const tasks = dayTasks[dow];
+  const todayKey = getTodayKey();
+  
+  document.getElementById('today-day-name').textContent = dayFocus[dow].name;
+  document.getElementById('today-date').textContent = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('today-focus').textContent = dayFocus[dow].focus;
+
+  const reorder = [1,2,3,4,5,6,0];
+  const dayLetters = ['M','T','W','T','F','S','S'];
+  document.getElementById('streak-dots').innerHTML = reorder.map((d,i) => {
+    const isToday = d === dow;
+    const offset = d - dow;
+    const dt = new Date(now); dt.setDate(now.getDate() + offset);
+    const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+    return `<div class="streak-dot ${state.weekStreak[key]?'done':''} ${isToday?'today':''}">${dayLetters[i]}</div>`;
+  }).join('');
+
+  document.getElementById('task-list').innerHTML = tasks.map((t,i) => {
+    const key = `${todayKey}_${i}`;
+    const done = !!state.tasksDone[key];
+    return `<div class="task-card ${done?'done':''}" data-color="${t.color}" onclick="toggleTask(this,'${key}')">
+      <div class="task-time">${t.time}</div>
+      <div class="task-title">${t.title}</div>
+      <div class="task-desc">${t.desc}</div>
+      <div class="task-mark">${done?'✓':''}</div>
+    </div>`;
+  }).join('');
+
+  updateTodayProgress();
+}
+
+function toggleTask(el, key) {
+  state.tasksDone[key] = !state.tasksDone[key];
+  el.classList.toggle('done');
+  el.querySelector('.task-mark').textContent = state.tasksDone[key] ? '✓' : '';
+  
+  const todayKey = getTodayKey();
+  const allKeys = Object.keys(state.tasksDone).filter(k => k.startsWith(todayKey));
+  if (allKeys.every(k => state.tasksDone[k])) state.weekStreak[todayKey] = true;
+  
+  saveState();
+  updateTodayProgress();
+  if (state.tasksDone[key]) {
+    showToast('Done ✓');
+    autoSync();
+  }
+}
+
+function updateTodayProgress() {
+  const todayKey = getTodayKey();
+  const dow = new Date().getDay();
+  const total = dayTasks[dow].length;
+  const done = Object.keys(state.tasksDone).filter(k => k.startsWith(todayKey) && state.tasksDone[k]).length;
+  const pct = total > 0 ? Math.round((done/total)*100) : 0;
+  document.getElementById('prog-label').textContent = `${done} / ${total}`;
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('streak-count').textContent = done;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════════════════════════════════
+function saveSheetURL() {
+  const input = document.getElementById('sheets-url-input').value.trim();
+  if (!input) return;
+  sheetsURL = input;
+  localStorage.setItem('polymath_sheets_url', sheetsURL);
+  setStatus('Saved ✓', 'var(--green)');
+}
+
+function setStatus(msg, color='var(--muted)') {
+  const el = document.getElementById('sheets-status');
+  if (el) { el.textContent = msg; el.style.color = color; }
+}
+
+async function testSheetConnection() {
+  if (!sheetsURL) { setStatus('Paste a URL first', 'var(--rose)'); return; }
+  setStatus('Testing…');
+  try {
+    const res = await fetch(sheetsURL + '?action=ping', {method:'GET', mode:'no-cors'});
+    setStatus('Connection looks good ✓', 'var(--green)');
+  } catch(e) {
+    setStatus('Could not reach URL — check it is deployed as a web app', 'var(--rose)');
+  }
+}
+
+async function syncToSheets() {
+  if (!sheetsURL) { showToast('Set up Google Sheets in Laws → Settings'); return; }
+  setSyncState('syncing');
+  
+  const now = new Date();
+  const dow = now.getDay();
+  const todayKey = getTodayKey();
+  const tasks = dayTasks[dow];
+  
+  const payload = {
+    action: 'sync',
+    date: now.toISOString().split('T')[0],
+    day: dayFocus[dow].name,
+    focus: dayFocus[dow].focus,
+    tasks: tasks.map((t,i) => ({
+      time: t.time,
+      title: t.title,
+      done: !!state.tasksDone[`${todayKey}_${i}`]
+    })),
+    clusters: clusters.map(c => ({
+      name: c.name,
+      progress: c.progress,
+      active: c.interests.filter(i => state.done[`${c.id}_${i}`]).length,
+      total: c.interests.length
+    })),
+    languages: ['Spanish','French','Mandarin','Arabic','Portuguese','Italian','Japanese','German','Swahili']
+      .map(l => ({ language: l, active: !!state.done[`communicator_${l}`] }))
+  };
+
+  try {
+    const form = new FormData();
+    form.append('payload', JSON.stringify(payload));
+    await fetch(sheetsURL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: form
+    });
+    setSyncState('ok');
+    showToast('Synced to Google Sheets ✓');
+  } catch(e) {
+    setSyncState('err');
+    showToast('Sync failed — check connection');
+  }
+}
+
+function autoSync() {
+  if (sheetsURL) syncToSheets();
+}
+
+function manualSync() { syncToSheets(); }
+
+let syncTimer;
+function setSyncState(s) {
+  const btn = document.getElementById('sync-btn');
+  btn.className = 'sync-btn ' + s;
+  btn.textContent = s === 'syncing' ? '⟳' : s === 'ok' ? '✓' : '!';
+  clearTimeout(syncTimer);
+  if (s !== 'syncing') syncTimer = setTimeout(() => { btn.className='sync-btn'; btn.textContent='⟳'; }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════
+const notifMessages = {
+  morning: { title:'Polymath — Morning', body:'Wake. No phone. Move. You decided to.' },
+  evening: { title:'Polymath — Evening anchor', body:'Language + 10 pages. Phone in hall by 22:00.' },
+  midnight: { title:'Polymath — Day close', body:'Any tasks unfinished? Mark them and close the laptop.' }
+};
+
+async function toggleNotif(type, el) {
+  if (!('Notification' in window) && !('serviceWorker' in navigator)) {
+    showToast('Notifications need the app saved to Home Screen');
+    return;
+  }
+
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    perm = await Notification.requestPermission();
+  }
+  
+  if (perm !== 'granted') {
+    showToast('Enable notifications in iPhone Settings → Safari');
+    return;
+  }
+
+  state.notifs[type] = !state.notifs[type];
+  el.classList.toggle('on', state.notifs[type]);
+  saveState();
+  scheduleNotifications();
+  showToast(state.notifs[type] ? 'Reminder set ✓' : 'Reminder off');
+}
+
+function scheduleNotifications() {
+  // On iOS/Safari as PWA, we use the Notification API directly
+  // Real push requires a backend; this schedules local notifications via SW
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.ready.then(sw => {
+    sw.active && sw.active.postMessage({
+      type: 'schedule',
+      notifs: state.notifs
+    });
+  });
+}
+
+function loadNotifToggles() {
+  ['morning','evening','midnight'].forEach(t => {
+    const el = document.getElementById(`toggle-${t}`);
+    if (el && state.notifs[t]) el.classList.add('on');
+  });
+}
+
+function loadSheetURLInput() {
+  const el = document.getElementById('sheets-url-input');
+  if (el && sheetsURL) el.value = sheetsURL;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DECADE
+// ═══════════════════════════════════════════════════════════════════
+function renderDecade() {
+  document.getElementById('decade-phases').innerHTML = decades.map(d => `
+    <div class="dphase" data-phase="${d.phase}" onclick="togglePhase(this)">
+      <div class="dphase-header">
+        <div class="dphase-age">${d.age}</div>
+        <div class="dphase-title">${d.title}</div>
+        <div class="dphase-tag">${d.tag}</div>
+        <div class="dphase-arrow">›</div>
+      </div>
+      <div class="dphase-body">
+        <div class="dphase-desc">${d.desc}</div>
+        <div class="dphase-tracks">${d.tracks.map(t=>`<div class="dtrack"><div class="dtrack-label">${t.label}</div>${t.items.map(i=>`<div class="dtrack-item">— ${i}</div>`).join('')}</div>`).join('')}</div>
+        <div class="dphase-milestones">${d.milestones.map(m=>`<span class="dmilestone">${m}</span>`).join('')}</div>
+      </div>
+    </div>`).join('');
+  document.querySelector('.dphase').classList.add('open');
+}
+
+function togglePhase(el) {
+  const open = el.classList.contains('open');
+  document.querySelectorAll('.dphase').forEach(p=>p.classList.remove('open'));
+  if (!open) el.classList.add('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CLUSTERS
+// ═══════════════════════════════════════════════════════════════════
+function renderClusters() {
+  document.getElementById('clusters-grid').innerHTML = clusters.map(c => `
+    <div class="cluster-card" data-cluster="${c.id}" onclick="openCluster('${c.id}')">
+      <div class="cluster-header">
+        <div class="cluster-name">${c.name}</div>
+        <div class="cluster-age">${c.age}</div>
+      </div>
+      <div class="cluster-desc">${c.desc}</div>
+      <div class="cluster-pills">${c.interests.slice(0,4).map(i=>`<span class="cpill">${i}</span>`).join('')}${c.interests.length>4?`<span class="cpill">+${c.interests.length-4}</span>`:''}</div>
+      <div class="cluster-progress"><div class="cluster-progress-fill" style="width:${c.progress}%"></div></div>
+      <div class="cluster-footer"><span class="cluster-pct">${c.progress}% initiated</span></div>
+    </div>`).join('');
+}
+
+function openCluster(id) {
+  const c = clusters.find(x=>x.id===id);
+  document.getElementById('panel-title').textContent = c.name;
+  document.getElementById('interests-list').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;font-style:italic;padding:9px 11px;background:var(--surface2);border-radius:7px;border:0.5px solid var(--border)">${c.progressNote}</div>
+    ${c.interests.map(i => {
+      const key = `${id}_${i}`;
+      const done = !!state.done[key];
+      return `<div class="interest-item ${done?'done':''}" onclick="toggleInterest('${id}','${i}',this)">
+        <div class="interest-left"><span class="check-dot"></span><span class="interest-name">${i}</span></div>
+        <div class="interest-status">${done?'Active':'Queued'}</div>
+      </div>`;
+    }).join('')}`;
+  document.getElementById('interest-panel').classList.add('visible');
+  document.querySelectorAll('.cluster-card').forEach(el=>el.classList.remove('selected'));
+  document.querySelector(`[data-cluster="${id}"]`).classList.add('selected');
+  setTimeout(()=>document.getElementById('interest-panel').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function toggleInterest(clusterId, interest, el) {
+  const key = `${clusterId}_${interest}`;
+  state.done[key] = !state.done[key];
+  el.classList.toggle('done');
+  el.querySelector('.interest-status').textContent = state.done[key] ? 'Active' : 'Queued';
+  saveState(); updateStats();
+  showToast(state.done[key] ? 'Interest activated' : 'Moved to queue');
+}
+
+function closePanel() {
+  document.getElementById('interest-panel').classList.remove('visible');
+  document.querySelectorAll('.cluster-card').forEach(el=>el.classList.remove('selected'));
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LAWS
+// ═══════════════════════════════════════════════════════════════════
+function renderLaws() {
+  document.getElementById('laws-list').innerHTML = laws.map(l=>`
+    <div class="law-item">
+      <div class="law-num">${l.num}</div>
+      <div class="law-content">
+        <div class="law-title">${l.title}</div>
+        <div class="law-body">${l.body}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════
+function exportCSV() {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const dow = now.getDay();
+  const todayKey = getTodayKey();
+  
+  let csv = `POLYMATH TRACKER — ${dateStr}\n\nTODAY (${dayFocus[dow].name})\nTask,Time,Status\n`;
+  dayTasks[dow].forEach((t,i) => {
+    csv += `"${t.title}","${t.time}","${state.tasksDone[`${todayKey}_${i}`]?'Done':'Pending'}"\n`;
+  });
+  csv += `\nCLUSTER PROGRESS\nCluster,% Initiated,Active,Total\n`;
+  clusters.forEach(c => {
+    const active = c.interests.filter(i=>state.done[`${c.id}_${i}`]).length;
+    csv += `"${c.name}","${c.progress}%","${active}","${c.interests.length}"\n`;
+  });
+  csv += `\nLANGUAGES\nLanguage,Status\n`;
+  ['Spanish','French','Mandarin','Arabic','Portuguese','Italian','Japanese','German','Swahili'].forEach(l => {
+    csv += `"${l}","${state.done[`communicator_${l}`]?'ACTIVE':'Queued'}"\n`;
+  });
+  
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `polymath_${dateStr}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════════
+function switchView(name, btn) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  btn.classList.add('active');
+  document.querySelector('.scroll-area').scrollTop = 0;
+}
+
+function updateStats() {
+  document.getElementById('total-done').textContent = Object.values(state.done).filter(Boolean).length;
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SERVICE WORKER REGISTRATION
+// ═══════════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+renderToday();
+renderDecade();
+renderClusters();
+renderLaws();
+updateStats();
+loadNotifToggles();
+loadSheetURLInput();
+</script>
+</body>
+</html>
