@@ -18,7 +18,7 @@ The app has four sections:
 
 ---
 
-### 🧠 Why I built this
+### Why I built this
 
 Most habit trackers and productivity apps are built around a single goal or narrow focus.
 
