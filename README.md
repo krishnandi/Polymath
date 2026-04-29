@@ -18,6 +18,20 @@ The app has four sections:
 
 ---
 
+### 🧠 Why I built this
+
+Most habit trackers and productivity apps are built around a single goal or narrow focus.
+
+That never worked for me.
+
+I’m trying to grow across multiple areas at once—whether that’s learning, creative work, or personal development. I needed something that could bring all of those into one place without overcomplicating the process.
+
+So I built Polymath Tracker — a minimal, distraction-free tool that helps me stay consistent across everything I care about.
+
+It’s simple by design, fast to use, and built around how I actually work.
+
+---
+
 ## Stack
 
 - Vanilla HTML / CSS / JavaScript — single file, zero dependencies, zero build step
