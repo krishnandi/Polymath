@@ -1,3 +1,4 @@
+🔗 Live Demo: https://polymathtracker.netlify.app/
 # Polymath
 
 A personal operating system for the decade from 20 to 30. Built as a Progressive Web App — runs on iPhone with its own home screen icon, offline support, and real-time Google Sheets sync. No backend required.
